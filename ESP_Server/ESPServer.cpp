@@ -298,7 +298,7 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
     <input type='text' name='mqttclientpassword' value="%s" size="32" maxlength="20"><br>
     <label>MQTT client Tx Topic</label>
     <input type='text' name='mqttclienttxtopic' value="%s" size="32" maxlength="20"><br>
-    <label>MQTT client password</label>
+    <label>MQTT client Rx Topic</label>
     <input type='text' name='mqttclientrxtopic' value="%s" size="32" maxlength="20"><br>    
     <label>note: if you have seen %s and changed MQTT broker then set RFM69 encrypt key again!</label>
     <p><input type='submit' value='Save changes'>
@@ -308,7 +308,7 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
 </html>
 )rawliteral";
 
-#ifndef userpage_existing
+#ifndef userpage_existing 
     static const char PROGMEM USERPAGE_HTML[] = R"rawliteral(
     <!DOCTYPE html>
     <html>
@@ -599,6 +599,10 @@ void handleconfigureMqttWrite()
     }
 #endif
 
+void webServersend_P(uint32_t x, const char* type, const char* html){
+    webServer.send_P(x , type, html);
+}
+
 void websock_setup(void) {
     webServer.on("/", handleRoot);
     webServer.on("/configDevice", HTTP_GET, handleconfigureDevice); //startpage
@@ -687,6 +691,16 @@ void mqtt_loop() {
     
     mqttClient.loop();
 }
+
+void mqttpublish(const char* topic, const char* payload){
+     mqttClient.publish(topic, payload);
+}
+
+void mqttpublish(const char* topic, const char* payload, boolean retained){
+     mqttClient.publish(topic, payload, retained);
+}
+
+
 
 // ^^^^^^^^^ MQTT ^^^^^^^^^^^
 
