@@ -5,28 +5,27 @@
 
 /*
 void UserSubscribe(){
-    #ifndef usersubscribe_existing
-    #define usersubscribe_existing
-    #endif
-    return;  
+    mqttpublish("Info", "usersubscribe");
 }
+
 void MQTTBrokerChanged(){
-    #ifndef MQTTBrokerChanged_existing
-    #define MQTTBrokerChanged_existing
-    #endif
     return;  
 }
-
-
-#ifndef userpage_existing
-#define userpage_existing
-#endif 
-
 
     static const char PROGMEM USERPAGE_HTML[] = R"rawliteral(
     <!DOCTYPE html>
     <html>
-
+    <head>
+      <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
+      <title>DeviceName MQTT Configuration</title>
+      <style>
+        "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
+      </style>
+    </head>
+    <body>
+      <h3>Hi Userpage is here!</h3>
+      <a href="/"><button type="button">Home</button></a>
+    </body>
     </html>
     )rawliteral";
 
@@ -34,7 +33,7 @@ void MQTTBrokerChanged(){
         handleRoot();
     }
     void handleconfigureUser(){
-        webServersend_P(200, "text/html", USERPAGE_HTML);
+        webServersend_P(USERPAGE_HTML);
     }
 
 */

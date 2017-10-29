@@ -597,10 +597,13 @@ void handleconfigureMqttWrite()
     void handleconfigureUser(){
         webServer.send_P(200, "text/html", USERPAGE_HTML);
     }
+#else
+    void handleconfigureUserWrite();
+    void handleconfigureUser();
 #endif
 
-void webServersend_P(uint32_t x, const char* type, const char* html){
-    webServer.send_P(x , type, html);
+void webServersend_P(const char* html){
+    webServer.send_P(200, "text/html", html);
 }
 
 void websock_setup(void) {
