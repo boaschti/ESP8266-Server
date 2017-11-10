@@ -27,7 +27,7 @@ const char xyz[] = "ABC" DEVICE_NAME #  "XYZ";
 */
 
 
-#define SERIAL_BAUD   57600
+#define SERIAL_BAUD   115200
 
 #include "ESPServer.h"
 
@@ -193,7 +193,7 @@ void mdns_setup(void) {
     }else{
         Serial.println("MDNS.begin failed");
     }
-    Serial.printf("Connect to http://%s.local or http://", pGC->mdnsname);
+    Serial.printf("Connect to http://%s or http://", pGC->mdnsname);
     Serial.println(WiFi.localIP());
 }
 
@@ -703,7 +703,17 @@ void mqttpublish(const char* topic, const char* payload, boolean retained){
      mqttClient.publish(topic, payload, retained);
 }
 
+boolean mqttConnected(){
+    return mqttClient.connected();
+}
 
+void mqttSubscribe(const char* topic){
+    mqttClient.subscribe(topic);
+}
+
+void mqttUnsubscribe(const char* topic){
+    mqttClient.unsubscribe(topic);
+}
 
 // ^^^^^^^^^ MQTT ^^^^^^^^^^^
 
@@ -711,7 +721,8 @@ void mqttpublish(const char* topic, const char* payload, boolean retained){
 // Start webserver, ota, mqtt ect complete
 
 void setup_server(){
-
+    
+    Serial.begin(SERIAL_BAUD);
     Serial.println("eeprom_setup");
     eeprom_setup();
     Serial.println("wifi_setup");
@@ -724,6 +735,7 @@ void setup_server(){
     ota_setup();
     Serial.println("websock_setup");
     websock_setup();
+    Serial.println("webserver_setup_finished");
     
 }
 

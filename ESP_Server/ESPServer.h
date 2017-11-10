@@ -11,6 +11,7 @@
 //#define userpage_existing
 #endif
 
+#include <arduino.h>
 
 void setup_server();
 
@@ -23,3 +24,9 @@ void webServersend_P(const char* html);
 void mqttpublish(const char* topic, const char* payload);
 
 void mqttpublish(const char* topic, const char* payload, bool retained);
+
+void mqttSubscribeStateTopic();
+
+void mqttUnsubscribeStateTopic();
+
+boolean mqttConnected();

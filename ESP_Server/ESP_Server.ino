@@ -1,7 +1,6 @@
 #include "ESPServer.h"
 
 
-#define SERIAL_BAUD   57600
 
 /*
 void UserSubscribe(){
@@ -36,8 +35,14 @@ void MQTTBrokerChanged(){
         webServersend_P(USERPAGE_HTML);
     }
 
-*/
 
+void handleconfigureUserWrite(){
+    handleRoot();
+}
+void handleconfigureUser(){
+    webServersend_P(USERPAGE_HTML);
+}
+*/
 
 void callback(char* topic, byte* payload, unsigned int length) {
     mqttpublish("Info", "got Message");
@@ -45,7 +50,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 
 void setup(){
-    Serial.begin(SERIAL_BAUD);
     setup_server();
     
 }
