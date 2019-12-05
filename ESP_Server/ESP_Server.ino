@@ -1,16 +1,26 @@
 #include "ESPServer.h"
 
+  
+
+//#define AllowAcessPoint         //opens a acessPoint if saved Wlan is not reachable
 
 
 /*
+#define usersubscribe_existing
 void UserSubscribe(){
     mqttpublish("Info", "usersubscribe");
 }
+*/
 
+/*
+//#define MQTTBrokerChanged_existing
 void MQTTBrokerChanged(){
     return;  
 }
+*/
 
+
+#define userpage_existing
     static const char PROGMEM USERPAGE_HTML[] = R"rawliteral(
     <!DOCTYPE html>
     <html>
@@ -42,7 +52,7 @@ void handleconfigureUserWrite(){
 void handleconfigureUser(){
     webServersend_P(USERPAGE_HTML);
 }
-*/
+
 
 void callback(char* topic, byte* payload, unsigned int length) {
     mqttpublish("Info", "got Message");

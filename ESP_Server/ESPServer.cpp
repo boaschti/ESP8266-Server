@@ -18,6 +18,8 @@
 //  todo
 //- you can add your DeviceName by search and replace
 //- you can add your UserPageName by search and replace
+//- WifiManager.h move private: int           connectWifi(String ssid, String pass);  to public: int           connectWifi(String ssid, String pass);
+
 /*
 #define DEVICE_NAME   "FOOBAR"
 
@@ -89,6 +91,7 @@ struct _GLOBAL_CONFIG {
     char        updatePassword[20];
     char        mqttPassword[20];
     char        mqttUser[20];  
+    //uint8_t     userMem[1024];
 };
 
 struct _GLOBAL_CONFIG *pGC;
@@ -100,35 +103,89 @@ struct _GLOBAL_CONFIG *pGC;
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
 
 
+WiFiManager wifiManager;
+
+boolean DeviceEnteredConfigAp = false;
+
 void configModeCallback (WiFiManager *myWiFiManager) {
-    Serial.println("Entered config mode");
-    Serial.println(WiFi.softAPIP());
-    //if you used auto generated SSID, print it
-    Serial.println(myWiFiManager->getConfigPortalSSID());
+    Serial.println("SW: Entered AP to config");
+    DeviceEnteredConfigAp = true;
 }
 
 void wifi_setup(void) {
-    //WiFiManager
-    //Local intialization. Once its business is done, there is no need to keep it around
-    WiFiManager wifiManager;
-    //reset settings - for testing. Wipes out SSID/password.
-    //wifiManager.resetSettings();
+  //WiFiManager
+  //Local intialization. Once its business is done, there is no need to keep it around
+  //reset settings - for testing. Wipes out SSID/password.
+  //wifiManager.resetSettings();
+ 
+  
+  //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
+  wifiManager.setAPCallback(configModeCallback);
 
-    //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
-    wifiManager.setAPCallback(configModeCallback);
-
-    //fetches ssid and pass and tries to connect
-    //if it does not connect it starts an access point with the specified name
-    //here  "AutoConnectAP"
-    //and goes into a blocking loop awaiting configuration
-
-    wifiManager.setConfigPortalTimeout(180);
-
-    while(!wifiManager.autoConnect(pGC->apname)) {
-
+  //fetches ssid and pass and tries to connect
+  //if it does not connect it starts an access point with the specified name
+  //here  "AutoConnectAP"
+  //and goes into a blocking loop awaiting configuration
+  /*
+  #ifdef AllowAcessPoint
+      wifiManager.setConfigPortalTimeout(180);
+  #else
+      // try to connect 3 times then go in a blocking loop for config AP
+      wifiManager.setConfigPortalTimeout(1);
+      if(!wifiManager.autoConnect(pGC->apname)){
+        
+      }
+      wifiManager.setConfigPortalTimeout(180);
+  #endif
+  
+  wifiManager.setConfigPortalTimeout(1);
+  */
+  
+  
+  
+  wifiManager.setConfigPortalTimeout(1);
+  
+  uint8_t i = 0;
+  bool connected = false;
+  while((i <= 4)) {
+    i++;
+    Serial.println("SW: Try to connect");
+    
+    //if (wifiManager.autoConnect(pGC->apname)){
+    if (wifiManager.connectWifi("","") == WL_CONNECTED){
+        connected = true;
+        Serial.println("SW: connected to saved WLAN dont try again");
+        break;        
+    }else{
+        DeviceEnteredConfigAp = false;
     }
-
-    Serial.println("connected");
+  }
+  
+  if (!connected){
+      Serial.println("SW: start Config Portal because we have no connection to saved wlan");
+      wifiManager.setConfigPortalTimeout(360);
+      wifiManager.autoConnect(pGC->apname);
+  }
+  
+  // if AP is active we have to reset the Gateway because the wifimanager sends a open AP
+  if (DeviceEnteredConfigAp){
+      #ifndef AllowAcessPoint
+          //wifiManager.mode(WIFI_STA); //see https://github.com/kentaylor/WiFiManager/blob/master/examples/ConfigOnSwitch/ConfigOnSwitch.ino#L46
+          Serial.println("SW: reset cause: AP is active");
+          Serial.println("SW: Wait 10 seconds");
+          Serial.print("current IP: ");
+          //Serial.println(wifiManager.localIP());
+          //Serial.println(WiFi.localIP();
+          delay(10000);
+          // ESP.reset dont works first time after serial flashing
+          ESP.reset();
+          while(1);
+      #else
+          Serial.println("SW: not connected to saved WLAN. Run Programm.");
+      #endif
+  }else{
+      Serial.println("SW: connected to saved WLAN");
+  }
 }
 
 // ^^^^^^^^^ ESP8266 WiFi ^^^^^^^^^^^
@@ -149,6 +206,7 @@ void eeprom_setup() {
     pGC = (struct _GLOBAL_CONFIG *)EEPROM.getDataPtr();
     // if checksum bad init GC else use GC values
     if (gc_checksum() != pGC->checksum) {
+    //if (1){  
         Serial.println("Factory reset");
         memset(pGC, 0, sizeof(*pGC));
         Serial.println("AP_NAME");
@@ -175,6 +233,20 @@ void eeprom_setup() {
         EEPROM.commit();
     }
 }
+
+uint8_t eeprom_read_byte(uint16_t address){
+    return 0;
+    //return pGC->userMem[address];
+}
+
+uint8_t eeprom_write_byte(uint16_t address, uint8_t value){
+    //pGC->userMem[address] = value;
+    pGC->checksum = gc_checksum();
+    //EEPROM.commit();
+    return 0;
+    //return pGC->userMem[address];
+}
+
 // ^^^^^^^^^ Global Configuration ^^^^^^^^^^^
 
 // vvvvvvvvv ESP8266 web sockets vvvvvvvvvvv
@@ -693,6 +765,19 @@ void mqtt_loop() {
     }
     
     mqttClient.loop();
+}
+
+void mqttpublishJSON(const char* key, const char* value){
+    char payload[200] ="\"";
+    strncat(payload, key, 100);
+    strncat(payload, "\":\"", 10);
+    strncat(payload, value, 100);
+    strncat(payload, "\"", 10);
+    mqttClient.publish(pGC->tx_topic, payload);
+}
+
+void mqttpublishTXTopic(const char* payload){
+     mqttClient.publish(pGC->tx_topic, payload);
 }
 
 void mqttpublish(const char* topic, const char* payload){
