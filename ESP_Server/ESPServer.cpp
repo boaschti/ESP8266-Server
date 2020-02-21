@@ -730,32 +730,39 @@ void mqtt_setup() {
 
 
 void reconnect() {
-
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (mqttClient.connect(pGC->mqttclientname, pGC->mqttUser, pGC->mqttPassword)) {
-        delay(1000);
-        if (mqttClient.connected()) {
-            Serial.println("connected");
-            // Once connected, publish an announcement...
-            mqttClient.publish("DeviceName_Info", "connected");
-            // ... and resubscribe
-            #ifdef usersubscribe_existing
-                UserSubscribe();
-            #endif
-            delay(1000);
-            if (strlen(pGC->rx_topic)){
-                mqttClient.subscribe(pGC->rx_topic);
+    
+    static unsigned long timeLastConn = 0;
+    
+    if (strncmp(pGC->mqttbroker, "none", 4) != 0){
+    // connect after 50s again
+        if ((!timeLastConn) || ((timeLastConn + 100000) < millis())){
+            Serial.print("Attempting MQTT connection...");
+            // Attempt to connect
+            if (mqttClient.connect(pGC->mqttclientname, pGC->mqttUser, pGC->mqttPassword)) {
+                delay(1000);
+                if (mqttClient.connected()) {
+                    Serial.println("connected");
+                    // Once connected, publish an announcement...
+                    mqttClient.publish("DeviceName_Info", "connected");
+                    // ... and resubscribe
+                    #ifdef usersubscribe_existing
+                        UserSubscribe();
+                    #endif
+                    delay(1000);
+                    if (strlen(pGC->rx_topic)){
+                        mqttClient.subscribe(pGC->rx_topic);
+                    }
+                    Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
+                } else {
+                    Serial.println("not connected");
+                }
+            } else {
+                Serial.print("failed, rc=");
+                Serial.print(mqttClient.state());
+                Serial.println(" try again in 100s");
             }
-            Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
-        } else {
-            Serial.println("not connected");
+            timeLastConn = millis();
         }
-    } else {
-        Serial.print("failed, rc=");
-        Serial.print(mqttClient.state());
-        Serial.println(" try again in 300ms");
-        delay(300);
     }
 }
 
