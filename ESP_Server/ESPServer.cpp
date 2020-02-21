@@ -462,6 +462,7 @@ void handleconfigureDevice()
 void handleconfigureReset()
 {
     pGC->checksum++;
+    wifiManager.resetSettings();
     EEPROM.commit();
     ESP.reset();
     delay(1000);
