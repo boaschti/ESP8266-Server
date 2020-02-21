@@ -15,18 +15,9 @@
 //- oyu have to make a funktion to get messages: void callback(char* topic, byte* payload, unsigned int length) {}
 
 
-//  todo
-//- you can add your DeviceName by search and replace
 //- you can add your UserPageName by search and replace
 //- WifiManager.h move private: int           connectWifi(String ssid, String pass);  to public: int           connectWifi(String ssid, String pass);
 
-/*
-#define DEVICE_NAME   "FOOBAR"
-
-
-const char xyz[] = "ABC" "XYZ";
-const char xyz[] = "ABC" DEVICE_NAME #  "XYZ";
-*/
 
 
 #define SERIAL_BAUD   115200
@@ -37,15 +28,18 @@ const char xyz[] = "ABC" DEVICE_NAME #  "XYZ";
 #include <pgmspace.h>
 #include <PubSubClient.h>
 
+#ifndef DeviceName
+  #define DeviceName "DeviceName"
+#endif
 
 
 // Default values
-const char PROGMEM MDNS_NAME[] = "DeviceName";
-const char PROGMEM MQTTCLIENTNAME[] = "DeviceName";
-const char PROGMEM MQTT_BROKER[] = "raspberrypi";
-const char PROGMEM RX_TOPIC[] = "DeviceName/set/#";
-const char PROGMEM TX_TOPIC[] = "DeviceName/state";
-const char PROGMEM AP_NAME[] = "DeviceName-AP";
+const char PROGMEM MDNS_NAME[] = DeviceName;
+const char PROGMEM MQTTCLIENTNAME[] = DeviceName;
+const char PROGMEM MQTT_BROKER[] = "none"; // none = mqtt off
+const char PROGMEM RX_TOPIC[] = DeviceName"/set/#";
+const char PROGMEM TX_TOPIC[] = DeviceName"/state";
+const char PROGMEM AP_NAME[] = DeviceName"-AP";
 
 //Passwort und Benutzer zum Softwareupdate ueber Browser
 const char PROGMEM UPDATEUSER[]		  = "B";
@@ -287,7 +281,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
   <p><a href="/configUserPage"><button type="button">Configure UserPageName</button></a>
 </div>
 <div id="FirmwareUpdate">
-  <p><a href="/updater"><button type="button">Update DeviceName Firmware</button></a>
+  <p><a href="/updater"><button type="button">Update Firmware</button></a>
 </div>
 </body>
 </html>
@@ -327,7 +321,7 @@ static const char PROGMEM CONFIGUREDIV_HTML[] = R"rawliteral(
 <body>
   <h3>DeviceName Configuration</h3>
   <form method='POST' action='/configDiv' enctype='multipart/form-data'>
-    <label>DeviceName AP name</label>
+    <label>Access Point name</label>
     <input type='text' name='apname' value="%s" size="32" maxlength="32"><br>
     <label>DNS name</label>
     <input type='text' name='mdnsname' value="%s" size="32" maxlength="32"><br>
@@ -360,7 +354,7 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
 <body>
   <h3>DeviceName MQTT Configuration</h3>
   <form method='POST' action='/configMqtt' enctype='multipart/form-data'>
-    <label>MQTT broker</label>
+    <label>MQTT broker (none = off)</label>
     <input type='text' name='mqttbroker' value="%s" size="32" maxlength="32"><br>
     <label>MQTT client name</label>
     <input type='text' name='mqttclientname' value="%s" size="32" maxlength="32"><br>
