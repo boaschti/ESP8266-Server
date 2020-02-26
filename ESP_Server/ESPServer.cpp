@@ -6,13 +6,13 @@
 //- setup pages incl placeholder for a userconfigpage (handleconfigureUserWrite() and handleconfigureUser())
 //- mdns setup
 //- you can use pGC->tx_topic, pGC->rx_topic in you main code
-//- you can create a UserSubscribe() funktion to make your own subsribe code
+//- you can create a UserSubscribe() funktion to make your own subscribe code
 //- you can create a MQTTBrokerChanged() funktion
 
 
 
 //- you only have to include this File and call setup_server()
-//- oyu have to make a funktion to get messages: void callback(char* topic, byte* payload, unsigned int length) {}
+//- you have to make a funktion to get messages: void callback(char* topic, byte* payload, unsigned int length) {}
 
 
 //- you can add your UserPageName by search and replace
@@ -801,6 +801,14 @@ void mqttSubscribe(const char* topic){
 
 void mqttUnsubscribe(const char* topic){
     mqttClient.unsubscribe(topic);
+}
+
+void mqttSubscribeStateTopic(){
+    mqttClient.subscribe(pGC->tx_topic);
+}
+
+void mqttUnsubscribeStateTopic(){
+    mqttClient.unsubscribe(pGC->tx_topic);
 }
 
 // ^^^^^^^^^ MQTT ^^^^^^^^^^^

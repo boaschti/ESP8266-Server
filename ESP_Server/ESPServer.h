@@ -18,11 +18,15 @@ void mqttpublishTXTopic(const char* payload);
 // pubishes with editable userspecific topic
 void mqttpublish(const char* topic, const char* payload);
 
-void mqttpublish(const char* topic, const char* payload, bool retained);
+void mqttpublish(const char* topic, const char* payload, boolean retained);
 
 void mqttSubscribeStateTopic();
 
 void mqttUnsubscribeStateTopic();
+
+void mqttSubscribe(const char* topic);
+
+void mqttUnsubscribe(const char* topic);
 
 boolean mqttConnected();
 
