@@ -728,44 +728,59 @@ void mqtt_setup() {
 void reconnect() {
     
     static unsigned long timeLastConn = 0;
+    static bool everConnected = false;
     
-    if (strncmp(pGC->mqttbroker, "none", 4) != 0){
+
     // connect after 50s again
-        if ((!timeLastConn) || ((timeLastConn + 100000) < millis())){
-            Serial.print("Attempting MQTT connection...");
-            // Attempt to connect
-            if (mqttClient.connect(pGC->mqttclientname, pGC->mqttUser, pGC->mqttPassword)) {
-                delay(1000);
-                if (mqttClient.connected()) {
-                    Serial.println("connected");
-                    // Once connected, publish an announcement...
-                    mqttClient.publish("DeviceName_Info", "connected");
-                    // ... and resubscribe
-                    #ifdef usersubscribe_existing
-                        UserSubscribe();
-                    #endif
+    if ((!timeLastConn) || ((timeLastConn + 100000) < millis())){
+        timeLastConn = millis();
+        //check WiFi Verbindung
+        //Wenn wir schon mal verbunden waren und die Verbindung verlohren haben kann es auch am Wlan liegen. z.B. falscher AP wenn Repeater verbaut sind
+        if (WiFi.status() == WL_CONNECTED){
+            everConnected = true;
+        }else if(everConnected){
+            Serial.print("Try to Connect to WLAN again: ");
+            //WiFi.disconnect();
+            //delay(1000);
+            Serial.println(wifiManager.connectWifi("","")); 
+        }
+        
+        //check mqtt Verbindung
+        if (!mqttClient.connected()) {
+            if (strncmp(pGC->mqttbroker, "none", 4) != 0){
+                Serial.print("Attempting MQTT connection...");
+                // Attempt to connect
+                if (mqttClient.connect(pGC->mqttclientname, pGC->mqttUser, pGC->mqttPassword)) {
                     delay(1000);
-                    if (strlen(pGC->rx_topic)){
-                        mqttClient.subscribe(pGC->rx_topic);
+                    if (mqttClient.connected()) {
+                        Serial.println("connected");
+                        // Once connected, publish an announcement...
+                        mqttClient.publish("DeviceName_Info", "connected");
+                        // ... and resubscribe
+                        #ifdef usersubscribe_existing
+                            UserSubscribe();
+                        #endif
+                        delay(1000);
+                        if (strlen(pGC->rx_topic)){
+                            mqttClient.subscribe(pGC->rx_topic);
+                        }
+                        Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
+                    } else {
+                        Serial.println("not connected");
                     }
-                    Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
                 } else {
-                    Serial.println("not connected");
+                    Serial.print("failed, rc=");
+                    Serial.print(mqttClient.state());
+                    Serial.println(" try again in 100s");
                 }
-            } else {
-                Serial.print("failed, rc=");
-                Serial.print(mqttClient.state());
-                Serial.println(" try again in 100s");
             }
-            timeLastConn = millis();
         }
     }
 }
 
 void mqtt_loop() {
-    if (!mqttClient.connected()) {
-        reconnect();
-    }
+
+    reconnect();
     
     mqttClient.loop();
 }
