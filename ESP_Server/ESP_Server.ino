@@ -11,6 +11,7 @@
   
 
 //#define AllowAcessPoint         //opens a acessPoint if saved Wlan is not reachable
+//#define showKeysInWeb true      //shows keys in WEB page (not recommendet!!)
 
 
 /*

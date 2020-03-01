@@ -47,8 +47,9 @@ const char PROGMEM UPDATEPASSWORD[] =	"B";
 const char PROGMEM MQTTPASSWORD[]   = "B";
 const char PROGMEM MQTTUSER[]   = "B";
 
-#define showKeysInWeb true
-//#define showKeysInWeb false
+#ifndef showKeysInWeb
+  #define showKeysInWeb false
+#endif
 
 #define HiddenString "xxx"
 
@@ -94,7 +95,8 @@ struct _GLOBAL_CONFIG *pGC;
 // vvvvvvvvv ESP8266 WiFi vvvvvvvvvvv
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include "WiFiManager.cpp"          //https://github.com/tzapu/WiFiManager
+#include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 
 
 WiFiManager wifiManager;
@@ -167,7 +169,7 @@ void wifi_setup(void) {
           WiFi.mode(WIFI_STA); //see https://github.com/kentaylor/WiFiManager/blob/master/examples/ConfigOnSwitch/ConfigOnSwitch.ino#L46
           Serial.println("SW: reset cause: AP is active");
           Serial.println("SW: Wait 10 seconds");
-          Serial.print("current IP: ");
+          //Serial.print("current IP: ");
           //Serial.println(wifiManager.localIP());
           //Serial.println(WiFi.localIP();
           delay(10000);
