@@ -14,10 +14,7 @@
 //- you only have to include this File and call setup_server()
 //- you have to make a funktion to get messages: void callback(char* topic, byte* payload, unsigned int length) {}
 
-
 //- you can add your UserPageName by search and replace
-//- WifiManager.h move private: int           connectWifi(String ssid, String pass);  to public: int           connectWifi(String ssid, String pass);
-
 
 
 #define SERIAL_BAUD   115200
