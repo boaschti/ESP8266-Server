@@ -24,6 +24,10 @@ void mqttSubscribeStateTopic();
 
 void mqttUnsubscribeStateTopic();
 
+void mqttSubscribeSetTopic();
+
+void mqttUnsubscribeSetTopic();
+
 void mqttSubscribe(const char* topic);
 
 void mqttUnsubscribe(const char* topic);

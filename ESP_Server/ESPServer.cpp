@@ -20,6 +20,8 @@
 #define SERIAL_BAUD   115200
 
 #include "ESPServer.h"
+#include "ESP8266HTTPUpdateServer.h"
+#include "ESP8266HTTPUpdateServer.cpp"
 
 #include <ESP8266WiFi.h>
 #include <pgmspace.h>
@@ -761,14 +763,15 @@ void reconnect() {
                         // Once connected, publish an announcement...
                         mqttClient.publish("DeviceName_Info", "connected");
                         // ... and resubscribe
+                        delay(1000);
                         #ifdef usersubscribe_existing
                             UserSubscribe();
+                        #else                        
+                            if (strlen(pGC->rx_topic)){
+                                mqttClient.subscribe(pGC->rx_topic);
+                            }
+                            Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
                         #endif
-                        delay(1000);
-                        if (strlen(pGC->rx_topic)){
-                            mqttClient.subscribe(pGC->rx_topic);
-                        }
-                        Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
                     } else {
                         Serial.println("not connected");
                     }
@@ -820,6 +823,14 @@ void mqttSubscribe(const char* topic){
 
 void mqttUnsubscribe(const char* topic){
     mqttClient.unsubscribe(topic);
+}
+
+void mqttSubscribeSetTopic(){
+    mqttClient.subscribe(pGC->rx_topic);
+}
+
+void mqttUnsubscribeSetTopic(){
+    mqttClient.unsubscribe(pGC->rx_topic);
 }
 
 void mqttSubscribeStateTopic(){
