@@ -156,7 +156,7 @@ void wifi_setup(void) {
   
   if (!connected){
       Serial.println("SW: start Config Portal because we have no connection to saved wlan");
-      wifiManager.setConfigPortalTimeout(10);
+      wifiManager.setConfigPortalTimeout(360);
       wifiManager.autoConnect(pGC->apname);
   }
   
