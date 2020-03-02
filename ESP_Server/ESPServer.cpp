@@ -156,23 +156,28 @@ void wifi_setup(void) {
   
   if (!connected){
       Serial.println("SW: start Config Portal because we have no connection to saved wlan");
-      wifiManager.setConfigPortalTimeout(360);
+      wifiManager.setConfigPortalTimeout(10);
       wifiManager.autoConnect(pGC->apname);
   }
   
   // if AP is active we have to reset the Gateway because the wifimanager sends a open AP
   if (DeviceEnteredConfigAp){
       #ifndef AllowAcessPoint
-          WiFi.mode(WIFI_STA); //see https://github.com/kentaylor/WiFiManager/blob/master/examples/ConfigOnSwitch/ConfigOnSwitch.ino#L46
-          Serial.println("SW: reset cause: AP is active");
-          Serial.println("SW: Wait 10 seconds");
-          //Serial.print("current IP: ");
-          //Serial.println(wifiManager.localIP());
-          //Serial.println(WiFi.localIP();
-          delay(10000);
-          // ESP.reset dont works first time after serial flashing
-          ESP.reset();
-          while(1);
+          #ifndef WiFiNotRequired
+              WiFi.mode(WIFI_STA); //see https://github.com/kentaylor/WiFiManager/blob/master/examples/ConfigOnSwitch/ConfigOnSwitch.ino#L46
+              Serial.println("SW: reset cause: AP is active");
+              Serial.println("SW: Wait 10 seconds");
+              //Serial.print("current IP: ");
+              //Serial.println(wifiManager.localIP());
+              //Serial.println(WiFi.localIP();
+              delay(5000);
+              // ESP.reset dont works first time after serial flashing
+              ESP.reset();
+              while(1);
+          #else
+              Serial.println("SW: Switch Wifi off. Run Programm.");
+              WiFi.mode(WIFI_OFF);
+          #endif
       #else
           Serial.println("SW: not connected to saved WLAN. Run Programm.");
       #endif

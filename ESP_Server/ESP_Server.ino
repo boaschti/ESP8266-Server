@@ -10,8 +10,9 @@
 
   
 
-//#define AllowAcessPoint         //opens a acessPoint if saved Wlan is not reachable
-//#define showKeysInWeb true      //shows keys in WEB page (not recommendet!!)
+//#define AllowAcessPoint         // opens a acessPoint if saved Wlan is not reachable
+//#define WiFiNotRequired         // if there is no connection -> return from setup_server() (and run main loop) or restart esp until connection
+//#define showKeysInWeb true      // shows keys in WEB page (for debug! not recommendet!!)
 
 
 /*
