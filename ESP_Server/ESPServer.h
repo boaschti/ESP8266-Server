@@ -13,7 +13,7 @@ void webServersend_P(const char* html);
 void mqttpublishJSON(const char* key, const char* value);
 
 // pubishes with editable tx topic
-void mqttpublishTXTopic(const char* payload);
+void mqttpublishTXTopic(const char* payload, boolean retained);
 
 // pubishes with editable userspecific topic
 void mqttpublish(const char* topic, const char* payload);

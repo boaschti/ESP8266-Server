@@ -85,7 +85,8 @@ struct _GLOBAL_CONFIG {
     char        updatePassword[20];
     char        mqttPassword[20];
     char        mqttUser[20];  
-    //uint8_t     userMem[1024];
+    uint8_t     userMem8[50];
+    uint32_t    userMem32[20];
 };
 
 struct _GLOBAL_CONFIG *pGC;
@@ -761,7 +762,7 @@ void reconnect() {
                     if (mqttClient.connected()) {
                         Serial.println("connected");
                         // Once connected, publish an announcement...
-                        mqttClient.publish("DeviceName_Info", "connected");
+                        mqttClient.publish(DeviceName"_Info", "connected");
                         // ... and resubscribe
                         delay(1000);
                         #ifdef usersubscribe_existing
@@ -801,8 +802,8 @@ void mqttpublishJSON(const char* key, const char* value){
     mqttClient.publish(pGC->tx_topic, payload);
 }
 
-void mqttpublishTXTopic(const char* payload){
-     mqttClient.publish(pGC->tx_topic, payload);
+void mqttpublishTXTopic(const char* payload, boolean retained){
+     mqttClient.publish(pGC->tx_topic, payload, retained);
 }
 
 void mqttpublish(const char* topic, const char* payload){
