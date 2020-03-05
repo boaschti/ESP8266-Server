@@ -9,6 +9,7 @@
 //#define usersubscribe_existing  //if a UserSubscribe() exists. Else the Server will connect automatically to set Topic
 //#define MQTTBrokerChanged_existing  // if a MQTTBrokerChanged() exists you can do sth if Broker is changed via web
 
+#define DeviceName "ESPServerTest"
 
 #include "C:\Users\Basti\Documents\ESP8266-Server\ESP_Server\ESPServer.h"
 #include "C:\Users\Basti\Documents\ESP8266-Server\ESP_Server\ESPServer.cpp"
@@ -50,6 +51,7 @@ void handleconfigureUserWrite(){
 void handleconfigureUser(){
     webServersend_P(USERPAGE_HTML);
 }
+
 
 
 void callback(char* topic, byte* payload, unsigned int length) {
