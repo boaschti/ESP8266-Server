@@ -1,6 +1,17 @@
 
 #include <arduino.h>
 
+#define null        0   //((void*)0)
+
+typedef void (*UserEEPromSetup_mt)(void*);
+typedef uint32_t (*UserEEPromChecksum_mt)(uint32_t, void*);
+
+extern UserEEPromSetup_mt UserEEPromSetupCallback;
+extern UserEEPromChecksum_mt UserEEPromChecksumCallback;
+extern uint32_t UserEEPromAdditioanlSize;
+extern void* endOfEepromServerData;
+
+
 void setup_server();
 
 void loop_server();

@@ -14,14 +14,11 @@
 //- you only have to include this File and call setup_server()
 //- you have to make a funktion to get messages: void callback(char* topic, byte* payload, unsigned int length) {}
 
-//- you can add your UserPageName by search and replace
 
 
 #define SERIAL_BAUD   115200
 
-#include "ESPServer.h"
-#include "ESP8266HTTPUpdateServer.h"
-#include "ESP8266HTTPUpdateServer.cpp"
+#include "ESPServerDefines.h"
 
 #include <ESP8266WiFi.h>
 #include <pgmspace.h>
@@ -31,6 +28,17 @@
   #define DeviceName "DeviceName"
 #endif
 
+#ifndef UserPageName
+  #define UserPageName "UserPage"
+#endif
+
+#ifndef MQTTBrokerChanged_existing
+  #define MqttBrokerChangedMsg "nothing to do!"
+#endif
+
+#ifndef MqttBrokerChangedMsg
+  #define MqttBrokerChangedMsg "No Message defined"
+#endif
 
 // Default values
 const char PROGMEM MDNS_NAME[] = DeviceName;
@@ -59,6 +67,16 @@ PubSubClient mqttClient(espClient);
 #include <EEPROM.h>
 
 void callback(char* topic, byte* payload, unsigned int length);
+
+
+UserEEPromSetup_mt UserEEPromSetupCallback = (UserEEPromSetup_mt)null;
+UserEEPromChecksum_mt UserEEPromChecksumCallback = (UserEEPromChecksum_mt)null;
+uint32_t UserEEPromAdditioanlSize = 0;
+void* endOfEepromServerData;
+
+
+
+
 
 #ifdef MQTTBrokerChanged_existing
     void MQTTBrokerChanged();
@@ -200,17 +218,32 @@ uint32_t gc_checksum() {
     for (size_t i = 0; i < (sizeof(*pGC) - 4); i++) {
         checksum += *p++;
     }
+    
+    if (UserEEPromChecksumCallback != NULL)
+    {
+        checksum = UserEEPromChecksumCallback(checksum, p);
+    }
+    
     return checksum;
 }
+
+void SaveEEpromData(){
+    pGC->checksum = gc_checksum();
+    EEPROM.commit();
+}
+
 
 void eeprom_setup() {
     EEPROM.begin(4096);
     pGC = (struct _GLOBAL_CONFIG *)EEPROM.getDataPtr();
+
+    endOfEepromServerData = ((uint8_t*)pGC) + sizeof(*pGC);
+
     // if checksum bad init GC else use GC values
     if (gc_checksum() != pGC->checksum) {
     //if (1){  
         Serial.println("Factory reset");
-        memset(pGC, 0, sizeof(*pGC));
+        memset(pGC, 0, sizeof(*pGC) + UserEEPromAdditioanlSize);
         Serial.println("AP_NAME");
         strcpy_P(pGC->apname, AP_NAME);
         Serial.println("MQTT_BROKER");
@@ -228,11 +261,18 @@ void eeprom_setup() {
         strncpy_P(pGC->updateUser, UPDATEUSER, 20);
         strncpy_P(pGC->updatePassword, UPDATEPASSWORD, 20);    
         strncpy_P(pGC->mqttUser, MQTTUSER, 20);
-        strncpy_P(pGC->mqttPassword, MQTTPASSWORD, 20);       
+        strncpy_P(pGC->mqttPassword, MQTTPASSWORD, 20);
+
+        if (UserEEPromSetupCallback != NULL)
+        {
+            Serial.println("UserEEPromSetup");
+            UserEEPromSetupCallback(endOfEepromServerData);
+        }
+
         Serial.println("checksum");
         pGC->checksum = gc_checksum();
         Serial.println("EEPROM.commit");
-        EEPROM.commit();
+        EEPROM.commit();   
     }
 }
 
@@ -259,15 +299,18 @@ MDNSResponder mdns;
 
 void mdns_setup(void) {
     if (pGC->mdnsname[0] == '\0') return;
-
-    if (mdns.begin(pGC->mdnsname, WiFi.localIP())) {
+    
+    WiFi.hostname(pGC->mdnsname);
+    
+    //if (mdns.begin(pGC->mdnsname, WiFi.localIP())) {
+    if (mdns.begin(pGC->mdnsname)){
         Serial.println("MDNS responder started");
         mdns.addService("http", "tcp", 80);
         mdns.addService("ws", "tcp", 81);
     }else{
         Serial.println("MDNS.begin failed");
     }
-    Serial.printf("Connect to http://%s or http://", pGC->mdnsname);
+    Serial.printf("Connect to http://%s.local or http://", pGC->mdnsname);
     Serial.println(WiFi.localIP());
 }
 
@@ -277,16 +320,16 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
 <html>
 <head>
 <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
-<title>DeviceName</title>
+<title>)rawliteral"DeviceName R"rawliteral(</title>
 <style>
 "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
 </style>
-<h2>DeviceName</h2>
+<h2>)rawliteral"DeviceName R"rawliteral(</h2>
 <div id="configureDeviceName">
-  <p><a href="/configDevice"><button type="button">Configure DeviceName</button></a>
+  <p><a href="/configDevice"><button type="button">Configure )rawliteral"DeviceName R"rawliteral(</button></a>
 </div>
 <div id="configureUserPage">
-  <p><a href="/configUserPage"><button type="button">Configure UserPageName</button></a>
+  <p><a href="/configUserPage"><button type="button">Configure )rawliteral"UserPageName R"rawliteral(</button></a>
 </div>
 <div id="FirmwareUpdate">
   <p><a href="/updater"><button type="button">Update Firmware</button></a>
@@ -300,13 +343,13 @@ static const char PROGMEM CONFIGURE_HTML[] = R"rawliteral(
 <html>
 <head>
   <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
-  <title>DeviceName Configuration</title>
+  <title>)rawliteral"DeviceName R"rawliteral( Configuration</title>
   <style>
     "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
   </style>
 </head>
 <body>
-  <h2>DeviceName Configuration</h2>
+  <h2>)rawliteral"DeviceName R"rawliteral( Configuration</h2>
   <a href="/configDiv"><button type="button">Diverse</button></a>
   <p>
   <a href="/configMqtt"><button type="button">MQTT</button></a>
@@ -321,13 +364,13 @@ static const char PROGMEM CONFIGUREDIV_HTML[] = R"rawliteral(
 <html>
 <head>
   <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
-  <title>DeviceName Configuration</title>
+  <title>)rawliteral"DeviceName R"rawliteral( Configuration</title>
   <style>
     "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
   </style>
 </head>
 <body>
-  <h3>DeviceName Configuration</h3>
+  <h3>)rawliteral"DeviceName R"rawliteral( Configuration</h3>
   <form method='POST' action='/configDiv' enctype='multipart/form-data'>
     <label>Access Point name</label>
     <input type='text' name='apname' value="%s" size="32" maxlength="32"><br>
@@ -344,9 +387,10 @@ static const char PROGMEM CONFIGUREDIV_HTML[] = R"rawliteral(
     <input type='text' name='newpassword' size="20" maxlength="20"><br>
     <p><input type='submit' value='Save changes'>
   </form>
-  <p><a href="/configDevice"><button type="button">Cancel</button></a><a href="/configReset"><button type="button">Factory Reset</button></a>
+  <p><a href="/configDevice"><button type="button">Cancel</button></a><a href="/configReset"><button type="button">Reset Settings</button></a><a href="/configWifiMan"><button type="button">Reset WIFI</button></a><a href="/configReboot"><button type="button">Reboot</button></a><br>
+  Reset or Reboot: Close browser tab because browser will fire action again!
 </body>
-</html>
+</html> 
 )rawliteral";
 
 static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
@@ -354,13 +398,13 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
 <html>
 <head>
   <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
-  <title>DeviceName MQTT Configuration</title>
+  <title>)rawliteral"DeviceName R"rawliteral( MQTT Configuration</title>
   <style>
     "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
   </style>
 </head>
 <body>
-  <h3>DeviceName MQTT Configuration</h3>
+  <h3>)rawliteral"DeviceName R"rawliteral( MQTT Configuration</h3>
   <form method='POST' action='/configMqtt' enctype='multipart/form-data'>
     <label>MQTT broker (none = off)</label>
     <input type='text' name='mqttbroker' value="%s" size="32" maxlength="32"><br>
@@ -374,7 +418,8 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
     <input type='text' name='mqttclienttxtopic' value="%s" size="32" maxlength="20"><br>
     <label>MQTT client Rx Topic</label>
     <input type='text' name='mqttclientrxtopic' value="%s" size="32" maxlength="20"><br>    
-    <label>note: if you have seen %s and changed MQTT broker then set RFM69 encrypt key again!</label>
+    <label>Note: If you have seen %s and changed MQTT broker then follow the message below!</label><br> 
+    <label>)rawliteral"MqttBrokerChangedMsg R"rawliteral(</label>
     <p><input type='submit' value='Save changes'>
   </form>
   <p><a href="/configDevice"><button type="button">Cancel</button></a>
@@ -388,7 +433,7 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
     <html>
     <head>
       <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
-      <title>DeviceName MQTT Configuration</title>
+      <title>Dummy User Page</title>
       <style>
         "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
       </style>
@@ -466,12 +511,27 @@ void handleconfigureDevice()
     webServer.send_P(200, "text/html", CONFIGURE_HTML);
 }
 
-// Reset global config back to factory defaults
+// Reset global device config back to factory defaults
 void handleconfigureReset()
 {
     pGC->checksum++;
-    wifiManager.resetSettings();
+    
     EEPROM.commit();
+    ESP.reset();
+    delay(1000);
+}
+
+// Reset global wifi config back to factory defaults
+void handleResetWifiManager()
+{
+    wifiManager.resetSettings();
+    ESP.reset();
+    delay(1000);
+}
+
+// Reboot
+void handleReboot()
+{
     ESP.reset();
     delay(1000);
 }
@@ -677,6 +737,18 @@ void handleconfigureMqttWrite()
     void handleconfigureUser();
 #endif
 
+#ifndef userpage2_existing
+    void handleconfigureUserWrite2(){
+        handleRoot();
+    }
+    void handleconfigureUser2(){
+        webServer.send_P(200, "text/html", USERPAGE_HTML);
+    }
+#else
+    void handleconfigureUserWrite2();
+    void handleconfigureUser2();
+#endif
+
 void webServersend_P(const char* html){
     webServer.send_P(200, "text/html", html);
 }
@@ -689,8 +761,12 @@ void websock_setup(void) {
     webServer.on("/configDiv", HTTP_GET, handleconfigureDiv);
     webServer.on("/configDiv", HTTP_POST, handleconfigureDivWrite);
     webServer.on("/configReset", HTTP_GET, handleconfigureReset);
+    webServer.on("/configReboot", HTTP_GET, handleReboot);
+    webServer.on("/configWifiMan", HTTP_GET, handleResetWifiManager);
     webServer.on("/configUserPage", HTTP_GET, handleconfigureUser);
     webServer.on("/configUserPage", HTTP_POST, handleconfigureUserWrite);
+    webServer.on("/configUserPage2", HTTP_GET, handleconfigureUser2);
+    webServer.on("/configUserPage2", HTTP_POST, handleconfigureUserWrite2);
     webServer.onNotFound(handleNotFound);
     webServer.begin();
 
@@ -702,7 +778,7 @@ void websock_setup(void) {
 
 
 // vvvvvvvvv ESP8266 Web OTA Updater vvvvvvvvvvv
-#include "ESP8266HTTPUpdateServer.h"
+#include <ESP8266HTTPUpdateServer.h>
 ESP8266HTTPUpdateServer httpUpdater;
 
 void ota_setup() {
@@ -746,7 +822,7 @@ void reconnect() {
         if (WiFi.status() == WL_CONNECTED){
             everConnected = true;
         }else if(everConnected){
-            Serial.print("Try to Connect to WLAN again: ");
+            Serial.print("Try to Connect to WIFI again: ");
             //WiFi.disconnect();
             //delay(1000);
             Serial.println(wifiManager.connectWifi("","")); 
@@ -770,11 +846,13 @@ void reconnect() {
                         #else                        
                             if (strlen(pGC->rx_topic)){
                                 mqttClient.subscribe(pGC->rx_topic);
+                                Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
+                            }else{
+                                Serial.printf("Not subscribed to rx topic");
                             }
-                            Serial.printf("subscribed to topic [%s]\r\n", pGC->rx_topic);
                         #endif
                     } else {
-                        Serial.println("not connected");
+                        Serial.println("failed to connect to mqtt");
                     }
                 } else {
                     Serial.print("failed, rc=");
@@ -849,7 +927,9 @@ void mqttUnsubscribeStateTopic(){
 
 void setup_server(){
     
-    Serial.begin(SERIAL_BAUD);
+    if (!Serial){
+        Serial.begin(SERIAL_BAUD);
+    }
     Serial.println("eeprom_setup");
     eeprom_setup();
     Serial.println("wifi_setup");
