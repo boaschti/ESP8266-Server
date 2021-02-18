@@ -446,6 +446,25 @@ static const char PROGMEM CONFIGUREMQTT_HTML[] = R"rawliteral(
     )rawliteral";
 #endif
 
+#ifndef userpage2_existing 
+    static const char PROGMEM USERPAGE2_HTML[] = R"rawliteral(
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
+      <title>Dummy User Page</title>
+      <style>
+        "body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; }"
+      </style>
+    </head>
+    <body>
+      <h3>No Userpage defined or #define userpage_existing not set!</h3>
+      <a href="/"><button type="button">Home</button></a>
+    </body>
+    </html>
+    )rawliteral";
+#endif
+
 #include <WebSocketsServer.h>     //https://github.com/Links2004/arduinoWebSockets
 #include <Hash.h>
 ESP8266WebServer webServer(80);
@@ -742,7 +761,7 @@ void handleconfigureMqttWrite()
         handleRoot();
     }
     void handleconfigureUser2(){
-        webServer.send_P(200, "text/html", USERPAGE_HTML);
+        webServer.send_P(200, "text/html", USERPAGE2_HTML);
     }
 #else
     void handleconfigureUserWrite2();
